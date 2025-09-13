@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import './App.css';
 import GenderEnums from './Utils/GenderEnums';
-import StudentList from './Components/StudentList/StudentList';
+import StudentsTable from './Components/StudentsTable/StudentsTable';
 
 const data = [
   {
     id: 1,
-    attributes:{
+    attributes: {
       name: "Andrew Roach",
       gender: GenderEnums.Male,
       age: 23,
-      emailAddres: "vbecker@harvey.com",
+      emailAddress: "vbecker@harvey.com",
       department: "Chemistry",
       gpa: 3.75,
       graduationYear: 2027,
@@ -24,7 +24,7 @@ function App() {
 
   return (
     <div>
-      <StudentList data = {studentData} />
+      <StudentsTable data = {studentData} />
     </div>
   );
 }

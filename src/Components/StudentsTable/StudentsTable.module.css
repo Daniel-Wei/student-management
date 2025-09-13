@@ -1,0 +1,39 @@
+.table {
+  border: 1px solid black;
+  border-collapse: collapse;
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 100px;
+  font-family: Arial, sans-serif;
+}
+
+.caption {
+  caption-side: top;          /* caption at top (default) */
+  font-weight: bold;
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  text-align: center;
+  background-color: #f8f8f8;  /* subtle background */
+  border: 1px solid black;    /* matches table border */
+  border-bottom: none;        /* connect seamlessly */
+}
+
+.table thead {
+  background-color: #e0e0e0;
+}
+
+.table th,
+.table td {
+  border: 1px solid black;
+  padding: 10px 14px;
+}
+
+.table th {
+  text-align: center;
+  font-weight: bold;
+}
+
+.table td {
+  text-align: right;
+}
