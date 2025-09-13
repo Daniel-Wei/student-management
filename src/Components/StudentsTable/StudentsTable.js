@@ -19,7 +19,7 @@ const StudentsTable = ( { data }) => {
 
         <tbody>
             
-            {data.map(stu => <Student key={stu.id} attributes = {stu.attributes}/>)}
+            {data.map(stu => <Student key={stu.id} attributes = {stu}/>)}
         </tbody>
 
     </table>
