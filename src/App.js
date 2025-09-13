@@ -8,18 +8,26 @@ const data = [];
 function App() {
   const [studentData, setStudentData] = useState(data);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // only load all initially
   useEffect(() => {
     fetch("http://localhost:1337/api/students")
       .then((response) => {
-        return response.json()
+        if(response.ok){
+          return response.json();
+        }
+
+        throw new Error("Oops...data loading failed.")
       })
       .then((data) => {
          setStudentData(_ => data.data);
          setLoading(false);
       })
-      .catch(e => console.log(e));
+      .catch(e => {
+        setLoading(false);
+        setError(e);
+      });
   }, []);
 
 
@@ -27,7 +35,13 @@ function App() {
     <div>
       {/* show overlay when loading */}
       { loading && <LoadingOverlay />}
-      {!loading && <StudentsTable data = {studentData} />}
+      
+      {/* show error message when loading failed */}
+      { error && <p> {error.message} </p>}
+
+      {/* show students table when loading successfully completed */}
+      {!loading && !error && <StudentsTable data = {studentData} />}
+
     </div>
   );
 }
