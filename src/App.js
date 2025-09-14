@@ -12,22 +12,19 @@ function App() {
 
   // only load all initially
   useEffect(() => {
-    fetch("http://localhost:1337/api/students")
-      .then((response) => {
-        if(response.ok){
-          return response.json();
-        }
+      const fetchData = async () => {
+          const response = await fetch("http://localhost:1337/api/students");
+          if(response.ok){
+              const json = await response.json();
+              setStudentData(json.data);
+          }else{
+              const e = new Error("Oops...data loading failed.");
+              setError(e);
+          }
+          setLoading(false);
+      }
 
-        throw new Error("Oops...data loading failed.")
-      })
-      .then((data) => {
-         setStudentData(_ => data.data);
-         setLoading(false);
-      })
-      .catch(e => {
-        setLoading(false);
-        setError(e);
-      });
+      fetchData();
   }, []);
 
 
