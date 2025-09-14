@@ -1,11 +1,8 @@
 .table {
   border: 1px solid black;
   border-collapse: collapse;
-  position: absolute;
-  left: 100px;
-  right: 100px;
-  top: 100px;
   font-family: Arial, sans-serif;
+  margin-top: 20px;
 }
 
 .caption {
