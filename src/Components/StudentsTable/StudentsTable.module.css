@@ -1,3 +1,10 @@
+.container {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 100px;
+}
+
 .table {
   border: 1px solid black;
   border-collapse: collapse;
