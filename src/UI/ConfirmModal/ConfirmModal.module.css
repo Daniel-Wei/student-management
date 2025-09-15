@@ -1,0 +1,48 @@
+/* ConfirmModal.module.css */
+
+.confirmModal {
+  width: 40%;
+  height: 120px;                /* previously 20% height, now fixed */
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  background-color: #ffbc0d;    /* yellow shade */
+  border-radius: 10px;
+  box-shadow: 0 0 10px dimgray;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Text inside modal */
+.confirmText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 10px;
+  font-size: 20px;
+  text-align: center;
+  color: #000; /* visible on yellow */
+}
+
+/* Container for buttons */
+.confirmModelButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* Buttons inside container */
+.confirmModelButton {
+  margin: 5px;
+  width: 80px;
+  color: #fff;
+  background-color: dimgray;
+  font-size: 16px;
+  border: 1px solid dimgray
+}

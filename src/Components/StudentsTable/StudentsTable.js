@@ -5,23 +5,40 @@ import StudentActionTypeEnum from "./StudentsTableActionEnum";
 import LoadingOverlay from "../../UI/LoadingOverlay/LoadingOverlay";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowsRotate } from "@fortawesome/free-solid-svg-icons";
+import ConfirmModal from "../../UI/ConfirmModal/ConfirmModal";
 
 // group all states together
 const initialState = {
+    confirmPrompt: false,
     loading: true,
     error: null,
-    studentData: []
+    studentData: [],
+    documentIdToDelete: null,
 };
 
 // reducer: set up all states accordingly
 const reducer = (state, action) => {
     switch(action.type){
+        case StudentActionTypeEnum.CONFIRMPROMPT:
+            return {
+                ...state,
+                confirmPrompt: true,
+                documentIdToDelete: action.payload
+            }
+
+        case StudentActionTypeEnum.CANCELLED:
+            return {
+                ...state,
+                confirmPrompt: false,
+            }
+        
         case StudentActionTypeEnum.LOADED:
             return { 
                 studentData: action.payload.filter(s => !s.deleted), 
                 loading: false, 
                 error: null 
             };
+        
         case StudentActionTypeEnum.DELETE:
             return {
                 studentData: state.studentData.map(s =>
@@ -30,18 +47,21 @@ const reducer = (state, action) => {
                 loading: false,
                 error: null,
             };
+        
         case StudentActionTypeEnum.LOADING:
             return { 
                 ...state, 
                 loading: true, 
                 error: null 
             };
+        
         case StudentActionTypeEnum.ERROR:
             return { 
                 ...state, 
                 loading: false, 
                 error: action.payload 
             };
+        
         default:
             return state;
     }
@@ -49,7 +69,7 @@ const reducer = (state, action) => {
 
 const StudentsTable = () => {
     const [state, dispatch] = useReducer(reducer, initialState);
-    const { loading, error, studentData } = state;
+    const { confirmPrompt, documentIdToDelete, loading, error, studentData } = state;
 
     const fetchData = useCallback(async () => {
         dispatch({ type: StudentActionTypeEnum.LOADING });
@@ -68,6 +88,7 @@ const StudentsTable = () => {
 
     const deleteStudentByID = useCallback(async (documentId) => {
         try{
+            dispatch({ type: StudentActionTypeEnum.CANCELLED });
             dispatch({ type: StudentActionTypeEnum.LOADING });
             const response = await fetch(`http://localhost:1337/api/students/${documentId}`, 
                 {
@@ -88,7 +109,7 @@ const StudentsTable = () => {
     }, []);
 
     const handleDelete = (documentId) => {
-        deleteStudentByID(documentId);
+        dispatch({ type: StudentActionTypeEnum.CONFIRMPROMPT, payload: documentId });
     }
 
     useEffect(() => {
@@ -96,6 +117,12 @@ const StudentsTable = () => {
     }, [fetchData]);
 
     return <>
+        { confirmPrompt &&  <ConfirmModal 
+                            confirmText={"Are you sure to delete this record?"}
+                                onConfirmDelete={() => deleteStudentByID(documentIdToDelete)}
+                                onCancelDelete={() => {dispatch({ type: StudentActionTypeEnum.CANCELLED })}} 
+                            />
+        }
         { loading && <LoadingOverlay /> }
         { error && <p>{error.message}</p> }
         {!loading && !error && 
@@ -124,7 +151,7 @@ const StudentsTable = () => {
                             <Student 
                                 key={stu.id} 
                                 attributes={stu} 
-                                handleDelete={handleDelete} 
+                                handleDelete={() => handleDelete(stu.documentId)} 
                             />
                         )}
                     </tbody>
