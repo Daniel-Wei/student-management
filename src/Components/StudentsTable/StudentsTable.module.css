@@ -2,7 +2,21 @@
   position: absolute;
   left: 100px;
   right: 100px;
-  top: 100px;
+  top: 30px;
+}
+button{
+  border-radius: 3px;
+  box-shadow: 0 0 3px rgba(0,0,0,0.002);
+  transition: .3s;
+  height: 25px;
+  width: 90px
+}
+button + button {
+  margin-left: 25px;
+}
+
+button:hover{
+  background-color: #d62828;
 }
 
 .table {
@@ -10,6 +24,7 @@
   border-collapse: collapse;
   font-family: Arial, sans-serif;
   margin-top: 20px;
+  width: 100%;
 }
 
 .caption {
@@ -31,13 +46,4 @@
 .table td {
   border: 1px solid black;
   padding: 10px 14px;
-}
-
-.table th {
-  text-align: center;
-  font-weight: bold;
-}
-
-.table td {
-  text-align: center;
 }

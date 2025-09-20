@@ -1,4 +1,6 @@
 const StudentsTableActionEnum = {
+    SHOWADDFORM: 'SHOWADDFORM',
+    HIDEADDFORM: 'HIDEADDFORM',
     CONFIRMPROMPT: 'CONFIRMPROMPT',
     CONFIRMED: 'CONFIRMED',
     CANCELLED: 'CANCELLED',
@@ -7,6 +9,7 @@ const StudentsTableActionEnum = {
     ERROR: 'ERROR',
     DELETE: 'DELETE',
     UPDATE: 'PUT',
+    POST: 'POST',
 }
 
 export default StudentsTableActionEnum;
