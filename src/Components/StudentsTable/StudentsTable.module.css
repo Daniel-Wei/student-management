@@ -15,10 +15,6 @@ button + button {
   margin-left: 25px;
 }
 
-button:hover{
-  background-color: #d62828;
-}
-
 .table {
   border: 1px solid black;
   border-collapse: collapse;
@@ -28,7 +24,7 @@ button:hover{
 }
 
 .caption {
-  caption-side: top;          /* caption at top (default) */
+  caption-side: top;
   font-weight: bold;
   font-size: 1.2rem;
   padding: 0.5rem;

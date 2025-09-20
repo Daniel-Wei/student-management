@@ -1,6 +1,8 @@
 import { useReducer } from "react";
 import StudentFormModule from "./StudentForm.module.css";
 import StudentFormEnum from "./StudentFormActionEnum.js";
+import StyleModule from "../../UI/Style.module.css";
+import ConfirmModal from "../../UI/ConfirmModal/ConfirmModal.js";
 
 const initialState = {
     name: "",
@@ -10,6 +12,8 @@ const initialState = {
     department: "",
     gpa: "",
     graduationYear: "",
+    showSubmitPrompt: false,
+    showRevertPrompt: false,
 };
 
 const reducer = (state, action) => {
@@ -22,15 +26,44 @@ const reducer = (state, action) => {
             newState[action.payload.field] = action.payload.value;
             return newState;
 
+        case StudentFormEnum.SUBMITONCLICK:
+            return {
+                ...state,
+                showSubmitConfirmPrompt: true,
+            }
+        
+        case StudentFormEnum.SUBMITCANCELLED:
+            return {
+                ...state,
+                showSubmitConfirmPrompt: false,
+            }
+
+        case StudentFormEnum.REVERTONCLICK:
+            return {
+                ...state,
+                showRevertPrompt: true,
+            }
+
+        case StudentFormEnum.SUBMITCONFIRMED:
+        case StudentFormEnum.REVERTCONFIRMED:
+            return initialState;
+        
+        case StudentFormEnum.REVERTCANCELLED:
+            return {
+                ...state,
+                showRevertPrompt: false,
+            }
+
         default:
             return state;
     }
 };
 
-const StudentForm = () => {
+const StudentForm = ( { onSubmit } ) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { name, gender, age, department, 
-            emailAddress, gpa, graduationYear } = state;
+            emailAddress, gpa, graduationYear, 
+            showSubmitConfirmPrompt, showRevertPrompt } = state;
 
     // Generic input change handler
     const handleChange = (e) => {
@@ -46,17 +79,34 @@ const StudentForm = () => {
 
     const revertBtnOnClick = (e) => {
         e.preventDefault();
-        dispatch({ type: StudentFormEnum.EMPTY });
+        dispatch({ type: StudentFormEnum.REVERTONCLICK });
     };
 
     const submitBtnOnClick = (e) => {
         e.preventDefault();
-        console.log("Form submitted:", state);
-        // do something with the data here...
+        dispatch( { type: StudentFormEnum.SUBMITONCLICK });
     };
 
-    return (
-        <form className={StudentFormModule.studentForm}>
+    const onSubmitConfirmed = () => {
+        dispatch({ type: StudentFormEnum.SUBMITCONFIRMED });
+        onSubmit(state);
+    }
+
+    return <>
+        { showSubmitConfirmPrompt &&  <ConfirmModal 
+                            confirmText={"Are you sure to submit?"}
+                                onConfirmed={onSubmitConfirmed}
+                                onCancelled={() => {dispatch({ type: StudentFormEnum.SUBMITCANCELLED })}} 
+                            />
+        }
+
+        { showRevertPrompt &&  <ConfirmModal 
+                            confirmText={"Are you sure to revert all changes?"}
+                                onConfirmed={() => {dispatch({ type: StudentFormEnum.REVERTCONFIRMED })}}
+                                onCancelled={() => {dispatch({ type: StudentFormEnum.REVERTCANCELLED })}} 
+                            />
+        }
+        <form className={StudentFormModule.studentForm} onSubmit={(e) => {e.preventDefault()}}>
             <div className={StudentFormModule.formItem}>
                 <label htmlFor="inputName">Name</label>
                 <input
@@ -136,15 +186,23 @@ const StudentForm = () => {
 
             <div className={StudentFormModule.formBtnContainer}>
                 <div className={StudentFormModule.formBtn}>
-                    <button onClick={revertBtnOnClick}>Revert</button>
+                    <button className={`${StyleModule.warningHover} ${StyleModule.button}`}
+                            onClick={revertBtnOnClick}>
+                        Revert
+                    </button>
                 </div>
 
                 <div className={StudentFormModule.formBtn}>
-                    <button onClick={submitBtnOnClick}>Submit+</button>
+                    <button className={`${StyleModule.normalHover} ${StyleModule.button}`} 
+                            onClick={submitBtnOnClick}
+                            type="button">
+
+                        Submit
+                    </button>
                 </div>
             </div>
         </form>
-    );
+    </>;
 };
 
 export default StudentForm;

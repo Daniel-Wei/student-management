@@ -1,7 +1,8 @@
 import Backdrop from '../Backdrop/Backdrop';
 import ConfirmModule from './ConfirmModal.module.css';
+import StyleModule from '../Style.module.css';
 
-const ConfirmModal = ({confirmText, onConfirmDelete, onCancelDelete}) => {
+const ConfirmModal = ({confirmText, onConfirmed, onCancelled}) => {
     return <Backdrop>
             <div className={ConfirmModule.confirmModal}>
                 <div className={ConfirmModule.confirmText}>
@@ -9,8 +10,14 @@ const ConfirmModal = ({confirmText, onConfirmDelete, onCancelDelete}) => {
                 </div>
             
                 <div className={ConfirmModule.confirmModelButtonContainer}>
-                    <button className={ConfirmModule.confirmModelButton} onClick={onConfirmDelete}>Yes</button>
-                    <button className={ConfirmModule.confirmModelButton} onClick={onCancelDelete}>No</button>
+                    <button className={`${StyleModule.button} ${StyleModule.normalHover}`} 
+                            onClick={onConfirmed}>
+                        Yes
+                    </button>
+                    <button className={`${StyleModule.warningHover} ${StyleModule.button}`} 
+                            onClick={onCancelled}>
+                        No
+                    </button>
                 </div>
             </div>
         

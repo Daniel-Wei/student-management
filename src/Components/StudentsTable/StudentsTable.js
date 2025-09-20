@@ -49,6 +49,7 @@ const reducer = (state, action) => {
         
         case StudentActionTypeEnum.LOADED:
             return { 
+                ...state,
                 studentData: action.payload.filter(s => !s.deleted), 
                 loading: false, 
                 error: null 
@@ -96,7 +97,7 @@ const StudentsTable = () => {
     }, []);
 
 
-    const addNewStudent = useCallback(async () => {
+    const addNewStudent = useCallback(async ( newStudent ) => {
         dispatch({ type: StudentActionTypeEnum.LOADING });
 
         try{
@@ -104,19 +105,20 @@ const StudentsTable = () => {
                 {
                     method: StudentActionTypeEnum.POST,
                     body: JSON.stringify({ data: { 
-                        name: "Daniel Wei",
-                        gender: "Male",
-                        age: 30,
-                        emailAddress: "DddWww@gmail.com",
-                        department: "Computer Science",
-                        gpa: 3.79,
-                        graduationYear: 2021
-                     } }),
+                        name: newStudent.name,
+                        gender: newStudent.gender,
+                        age: newStudent.age,
+                        emailAddress: newStudent.emailAddress,
+                        department: newStudent.department,
+                        gpa: newStudent.gpa,
+                        graduationYear: newStudent.graduationYear
+                     }}),
                     headers: { "Content-type": "application/json" }
                 }
             );
             if(response.ok){
                 fetchData();
+                dispatch({ type: StudentActionTypeEnum.SHOWADDFORM });
             } else {
                 throw new Error("Oops...data loading failed.");
             }
@@ -173,8 +175,8 @@ const StudentsTable = () => {
     return <>
         { confirmPrompt &&  <ConfirmModal 
                             confirmText={"Are you sure to delete this record?"}
-                                onConfirmDelete={() => deleteStudentByID(documentIdToDelete)}
-                                onCancelDelete={() => {dispatch({ type: StudentActionTypeEnum.CANCELLED })}} 
+                                onConfirmed={() => deleteStudentByID(documentIdToDelete)}
+                                onCancelled={() => {dispatch({ type: StudentActionTypeEnum.CANCELLED })}} 
                             />
         }
         { loading && <LoadingOverlay /> }
@@ -183,24 +185,27 @@ const StudentsTable = () => {
             <div className={StudentsTableModule.container}>
                 <div>
                     {showAddForm !== true && 
-                        <button onClick={onAddClick}>
+                        <button className={`${StyleModule.normalHover} ${StyleModule.button}`} 
+                                onClick={onAddClick}>
                             <FontAwesomeIcon icon={faAdd}/> Add
                         </button>
                     }
 
                     {showAddForm === true && 
-                        <button onClick={onCancelClick}>
+                        <button className={`${StyleModule.warningHover} ${StyleModule.button}`} 
+                                onClick={onCancelClick}>
                             <FontAwesomeIcon icon={faRemove}/> Cancel
                         </button>
                     }
 
-                    <button onClick={fetchData}>
+                    <button className={`${StyleModule.normalHover} ${StyleModule.button}`} 
+                            onClick={fetchData}>
                         <FontAwesomeIcon icon={faArrowsRotate}/> Refresh
                     </button>
                 </div>
 
                 {showAddForm && 
-                    <StudentForm/>
+                    <StudentForm onSubmit={addNewStudent}/>
                 }
 
                 <table className={StudentsTableModule.table}>
