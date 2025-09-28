@@ -19,6 +19,8 @@ const initialState = {
     studentData: [],
     documentIdToDelete: null,
     documentIdToAddBack: null,
+    showEditForm: false,
+    studentToEdit: null,
 };
 
 // reducer: set up all states accordingly
@@ -34,6 +36,19 @@ const reducer = (state, action) => {
             return {
                 ...state,
                 showAddForm: false,
+            }
+
+        case StudentActionTypeEnum.SHOWEDITFORM: 
+            return {
+                ...state,
+                showEditForm: true,
+                studentToEdit: action.payload,
+            }
+
+        case StudentActionTypeEnum.HIDEEDITFORM: 
+            return {
+                ...state,
+                showEditForm: false,
             }
 
         case StudentActionTypeEnum.DELETECONFIRMPROMPT:
@@ -111,14 +126,19 @@ const StudentsTable = () => {
     const [state, dispatch] = useReducer(reducer, initialState);
     const { deleteConfirmPrompt, documentIdToDelete, 
             addBackConfirmPrompt, documentIdToAddBack,
-            loading, error, studentData, showAddForm } = state;
+            loading, error, studentData, showAddForm, 
+            showEditForm, studentToEdit } = state;
 
     const onAddClick = useCallback(async() => {
         dispatch( { type: StudentActionTypeEnum.SHOWADDFORM } );
     }, []);
 
-    const onCancelClick = useCallback(async() => {
+    const onAddCancelClick = useCallback(async() => {
         dispatch( { type: StudentActionTypeEnum.HIDEADDFORM } );
+    }, []);
+
+    const onEditCancelClick = useCallback(async() => {
+        dispatch( { type: StudentActionTypeEnum.HIDEEDITFORM } );
     }, []);
 
     const fetchData = useCallback(async () => {
@@ -158,6 +178,36 @@ const StudentsTable = () => {
             if(response.ok){
                 fetchData();
                 dispatch({ type: StudentActionTypeEnum.SHOWADDFORM });
+            } else {
+                throw new Error("Oops...data loading failed.");
+            }
+        }catch(e){
+            dispatch({ type: StudentActionTypeEnum.ERROR, payload: e });
+        }
+    }, [fetchData]);
+
+     const updateStudent = useCallback(async ( updatedStudent ) => {
+        dispatch({ type: StudentActionTypeEnum.LOADING });
+
+        try{
+            const response = await fetch(`http://localhost:1337/api/students/${updatedStudent.documentId}`, 
+                {
+                    method: StudentActionTypeEnum.UPDATE,
+                    body: JSON.stringify({ data: { 
+                        name: updatedStudent.name,
+                        gender: updatedStudent.gender,
+                        age: updatedStudent.age,
+                        emailAddress: updatedStudent.emailAddress,
+                        department: updatedStudent.department,
+                        gpa: updatedStudent.gpa,
+                        graduationYear: updatedStudent.graduationYear
+                     }}),
+                    headers: { "Content-type": "application/json" }
+                }
+            );
+            if(response.ok){
+                fetchData();
+                dispatch({ type: StudentActionTypeEnum.HIDEEDITFORM });
             } else {
                 throw new Error("Oops...data loading failed.");
             }
@@ -218,6 +268,14 @@ const StudentsTable = () => {
         dispatch({ type: StudentActionTypeEnum.ADDBACKCONFIRMPROMPT, payload: documentId });
     }
 
+    const updateHanlder = (student) => {
+
+        if(showAddForm){
+            dispatch({type: StudentActionTypeEnum.HIDEADDFORM });
+        }
+        dispatch({ type: StudentActionTypeEnum.SHOWEDITFORM, payload: student});
+    }
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -241,7 +299,7 @@ const StudentsTable = () => {
         {!loading && !error && 
             <div className={StudentsTableModule.container}>
                 <div>
-                    {showAddForm !== true && 
+                    {showAddForm !== true && showEditForm !== true &&
                         <button className={`${StyleModule.normalHover} ${StyleModule.button}`} 
                                 onClick={onAddClick}>
                             <FontAwesomeIcon icon={faAdd}/> Add
@@ -250,7 +308,14 @@ const StudentsTable = () => {
 
                     {showAddForm === true && 
                         <button className={`${StyleModule.warningHover} ${StyleModule.button}`} 
-                                onClick={onCancelClick}>
+                                onClick={onAddCancelClick}>
+                            <FontAwesomeIcon icon={faRemove}/> Cancel
+                        </button>
+                    }
+
+                     {showEditForm === true && 
+                        <button className={`${StyleModule.warningHover} ${StyleModule.button}`} 
+                                onClick={onEditCancelClick}>
                             <FontAwesomeIcon icon={faRemove}/> Cancel
                         </button>
                     }
@@ -262,7 +327,11 @@ const StudentsTable = () => {
                 </div>
 
                 {showAddForm && 
-                    <StudentForm onSubmit={addNewStudent}/>
+                    <StudentForm onAdd={addNewStudent}/>
+                }
+
+                {showEditForm && 
+                    <StudentForm studentToEdit={studentToEdit} onEdit={updateStudent}/>
                 }
 
                 <table className={StudentsTableModule.table}>
@@ -285,7 +354,8 @@ const StudentsTable = () => {
                                 key={stu.id} 
                                 attributes={stu} 
                                 deleteHandler={() => deleteHandler(stu.documentId)}
-                                addBackHandler = {() => addBackHandler(stu.documentId)} 
+                                addBackHandler = {() => addBackHandler(stu.documentId)}
+                                updateHandler = {() => updateHanlder(stu)}
                             />
                         )}
                     </tbody>

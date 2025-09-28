@@ -1,5 +1,5 @@
 .confirmModal {
-  width: 40%;
+  width: 30%;
   height: 120px;                /* previously 20% height, now fixed */
   position: absolute;
   left: 0;

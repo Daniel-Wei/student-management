@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import StudentFormModule from "./StudentForm.module.css";
 import StudentFormEnum from "./StudentFormActionEnum.js";
 import StyleModule from "../../UI/Style.module.css";
@@ -20,6 +20,13 @@ const reducer = (state, action) => {
     switch (action.type) {
         case StudentFormEnum.EMPTY:
             return initialState; 
+
+        case StudentFormEnum.EDIT:
+            return {
+                ...action.payload,
+                showSubmitPrompt: false,
+                showRevertPrompt: false,
+            }; 
 
         case StudentFormEnum.UPDATE:
             let newState = {...state};
@@ -47,10 +54,15 @@ const reducer = (state, action) => {
         case StudentFormEnum.SUBMITCONFIRMED:
         case StudentFormEnum.REVERTCONFIRMED:
             return initialState;
+
+        case StudentFormEnum.EDITREVERTCONFIRMED:
+            return {
+                ...action.payload,
+                showRevertPrompt: false,
+            };
         
         case StudentFormEnum.REVERTCANCELLED:
             return {
-                ...state,
                 showRevertPrompt: false,
             }
 
@@ -59,8 +71,15 @@ const reducer = (state, action) => {
     }
 };
 
-const StudentForm = ( { onSubmit } ) => {
+const StudentForm = ( { onAdd, studentToEdit, onEdit} ) => {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    if(studentToEdit){
+        dispatch({ type: StudentFormEnum.EDIT, payload: studentToEdit });
+    }
+  }, [studentToEdit]);
+  
   const { name, gender, age, department, 
             emailAddress, gpa, graduationYear, 
             showSubmitConfirmPrompt, showRevertPrompt } = state;
@@ -89,7 +108,19 @@ const StudentForm = ( { onSubmit } ) => {
 
     const onSubmitConfirmed = () => {
         dispatch({ type: StudentFormEnum.SUBMITCONFIRMED });
-        onSubmit(state);
+        if(!studentToEdit){
+            onAdd(state);
+        }else{
+            onEdit(state);
+        }
+    }
+
+    const onRevertConfirmed = () => {
+        if(!studentToEdit){
+            dispatch({ type: StudentFormEnum.REVERTCONFIRMED });
+        }else{
+            dispatch({type: StudentFormEnum.EDITREVERTCONFIRMED, payload: studentToEdit })
+        }
     }
 
     return <>
@@ -102,7 +133,7 @@ const StudentForm = ( { onSubmit } ) => {
 
         { showRevertPrompt &&  <ConfirmModal 
                             confirmText={"Are you sure to revert all changes?"}
-                                onConfirmed={() => {dispatch({ type: StudentFormEnum.REVERTCONFIRMED })}}
+                                onConfirmed={onRevertConfirmed}
                                 onCancelled={() => {dispatch({ type: StudentFormEnum.REVERTCANCELLED })}} 
                             />
         }

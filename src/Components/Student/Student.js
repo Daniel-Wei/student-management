@@ -1,9 +1,9 @@
-import { faClockRotateLeft, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faClockRotateLeft, faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import StudentModule from './Student.module.css';
 import StyleModule from "../../UI/Style.module.css";
 
-const Student = ({ attributes, deleteHandler, addBackHandler }) => {
+const Student = ({ attributes, deleteHandler, addBackHandler, updateHandler }) => {
     const { name, age, gender, emailAddress, 
             department, gpa, graduationYear, deleted} = attributes;
 
@@ -16,14 +16,16 @@ const Student = ({ attributes, deleteHandler, addBackHandler }) => {
         <td className={StyleModule.alignCenter}>{gpa}</td>
         <td className={StyleModule.alignCenter}>{graduationYear}</td>
         <td className={StyleModule.alignCenter}>
-            {!deleted && 
-                <FontAwesomeIcon icon={faTrash} onClick={deleteHandler}/>
-            }
+            <div className={StudentModule.buttonGroup}>
+                {!deleted && 
+                    <FontAwesomeIcon icon={faTrash} onClick={deleteHandler}/>
+                }
 
-             {deleted && 
-                <FontAwesomeIcon icon={faClockRotateLeft} onClick={addBackHandler}/>
-            }
-            
+                {deleted && 
+                    <FontAwesomeIcon icon={faClockRotateLeft} onClick={addBackHandler}/>
+                }
+                <FontAwesomeIcon icon={faEdit} onClick={updateHandler}/>
+            </div>
         </td>
     </tr>
 }

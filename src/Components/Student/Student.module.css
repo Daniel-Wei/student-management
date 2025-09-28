@@ -1,3 +1,9 @@
 .strikeThrough {
     text-decoration: line-through;
 }
+
+.buttonGroup {
+    display: flex;
+    justify-content: space-evenly;
+    padding-bottom: none;
+}
