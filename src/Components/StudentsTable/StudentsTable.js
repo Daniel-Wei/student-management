@@ -1,297 +1,78 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect } from "react";
 import Student from "../Student/Student";
 import StudentsTableModule from './StudentsTable.module.css';
-import StudentActionTypeEnum from "./StudentsTableActionEnum";
 import LoadingOverlay from "../../UI/LoadingOverlay/LoadingOverlay";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAdd, faArrowsRotate, faRemove } from "@fortawesome/free-solid-svg-icons";
 import ConfirmModal from "../../UI/ConfirmModal/ConfirmModal";
 import StudentForm from "../StudentForm/StudentForm";
 import StyleModule from "../../UI/Style.module.css";
-
-// group all states together
-const initialState = {
-    showAddForm: null,
-    deleteConfirmPrompt: false,
-    addBackConfirmPrompt: false,
-    loading: true,
-    error: null,
-    studentData: [],
-    documentIdToDelete: null,
-    documentIdToAddBack: null,
-    showEditForm: false,
-    studentToEdit: null,
-};
-
-// reducer: set up all states accordingly
-const reducer = (state, action) => {
-    switch(action.type){
-        case StudentActionTypeEnum.SHOWADDFORM: 
-            return {
-                ...state,
-                showAddForm: true
-            }
-
-        case StudentActionTypeEnum.HIDEADDFORM: 
-            return {
-                ...state,
-                showAddForm: false,
-            }
-
-        case StudentActionTypeEnum.SHOWEDITFORM: 
-            return {
-                ...state,
-                showEditForm: true,
-                studentToEdit: action.payload,
-            }
-
-        case StudentActionTypeEnum.HIDEEDITFORM: 
-            return {
-                ...state,
-                showEditForm: false,
-            }
-
-        case StudentActionTypeEnum.DELETECONFIRMPROMPT:
-            return {
-                ...state,
-                deleteConfirmPrompt: true,
-                documentIdToDelete: action.payload
-            }
-
-        case StudentActionTypeEnum.DELETECANCELLED:
-            return {
-                ...state,
-                deleteConfirmPrompt: false,
-            }
-
-        case StudentActionTypeEnum.ADDBACKCONFIRMPROMPT:
-            return {
-                ...state,
-                addBackConfirmPrompt: true,
-                documentIdToAddBack: action.payload
-            }
-
-        case StudentActionTypeEnum.ADDBACKCANCELLED:
-            return {
-                ...state,
-                addBackConfirmPrompt: false,
-            }
-        
-        case StudentActionTypeEnum.LOADED:
-            return { 
-                ...state,
-                studentData: action.payload.filter(s => !s.deleted), 
-                loading: false, 
-                error: null 
-            };
-        
-        case StudentActionTypeEnum.DELETED:
-            return {
-                studentData: state.studentData.map(s =>
-                    s.documentId === action.payload ? { ...s, deleted: true } : s
-                ),
-                loading: false,
-                error: null,
-            };
-
-        case StudentActionTypeEnum.ADDEDBACK:
-            return {
-                studentData: state.studentData.map(s =>
-                    s.documentId === action.payload ? { ...s, deleted: false } : s
-                ),
-                loading: false,
-                error: null,
-            };
-        
-        case StudentActionTypeEnum.LOADING:
-            return { 
-                ...state, 
-                loading: true, 
-                error: null 
-            };
-        
-        case StudentActionTypeEnum.ERROR:
-            return { 
-                ...state, 
-                loading: false, 
-                error: action.payload 
-            };
-        
-        default:
-            return state;
-    }
-}
+import useStudentUI from "../../Hooks/UseStudentUi";
+import useStudentData from "../../Hooks/UseStudentDataHooks/UseStudentData";
+import StudentUIActionEnum from "../../Reducers/StudentUiReducer";
+import useFetch from "../../Hooks/UseStudentDataHooks/UseFetch";
+import useAddNewStudent from "../../Hooks/UseStudentDataHooks/UseAddNewStudent";
+import useDeleteStudentByID from "../../Hooks/UseStudentDataHooks/UseDeleteStudentByID";
+import useAddBackStudentByID from "../../Hooks/UseStudentDataHooks/UseAddBackStudentByID";
+import useUpdateStudent from "../../Hooks/UseStudentDataHooks/UseUpdateStudent";
 
 const StudentsTable = () => {
-    const [state, dispatch] = useReducer(reducer, initialState);
-    const { deleteConfirmPrompt, documentIdToDelete, 
-            addBackConfirmPrompt, documentIdToAddBack,
-            loading, error, studentData, showAddForm, 
-            showEditForm, studentToEdit } = state;
+    const { uiState, uiDispatch } = useStudentUI();
+    const { dataState, dataDispatch }  = useStudentData();
+    const { fetchData } = useFetch(dataDispatch);
+    const { addNewStudent } = useAddNewStudent(dataDispatch, uiDispatch, fetchData);
+    const { deleteStudentByID } = useDeleteStudentByID(dataDispatch, uiDispatch);
+    const { addBackStudentByID } = useAddBackStudentByID(uiDispatch, dataDispatch);
+    const { updateStudent } = useUpdateStudent(uiDispatch, dataDispatch, fetchData);
 
-    const onAddClick = useCallback(async() => {
-        dispatch( { type: StudentActionTypeEnum.SHOWADDFORM } );
-    }, []);
+    const { showAddForm, showEditForm, deleteConfirmPrompt, addBackConfirmPrompt,
+            documentIdToDelete, documentIdToAddBack, studentToEdit } = uiState;
 
-    const onAddCancelClick = useCallback(async() => {
-        dispatch( { type: StudentActionTypeEnum.HIDEADDFORM } );
-    }, []);
-
-    const onEditCancelClick = useCallback(async() => {
-        dispatch( { type: StudentActionTypeEnum.HIDEEDITFORM } );
-    }, []);
-
-    const fetchData = useCallback(async () => {
-        dispatch({ type: StudentActionTypeEnum.LOADING });
-        try{
-            const response = await fetch("http://localhost:1337/api/students");
-            if(response.ok){
-                const json = await response.json();
-                dispatch({ type: StudentActionTypeEnum.LOADED, payload: json.data });
-            } else {
-                throw new Error("Oops...data loading failed.");
-            }
-        }catch(e){
-            dispatch({ type: StudentActionTypeEnum.ERROR, payload: e });
-        }
-    }, []);
-
-    const addNewStudent = useCallback(async ( newStudent ) => {
-        dispatch({ type: StudentActionTypeEnum.LOADING });
-
-        try{
-            const response = await fetch('http://localhost:1337/api/students/', 
-                {
-                    method: StudentActionTypeEnum.POST,
-                    body: JSON.stringify({ data: { 
-                        name: newStudent.name,
-                        gender: newStudent.gender,
-                        age: newStudent.age,
-                        emailAddress: newStudent.emailAddress,
-                        department: newStudent.department,
-                        gpa: newStudent.gpa,
-                        graduationYear: newStudent.graduationYear
-                     }}),
-                    headers: { "Content-type": "application/json" }
-                }
-            );
-            if(response.ok){
-                fetchData();
-                dispatch({ type: StudentActionTypeEnum.SHOWADDFORM });
-            } else {
-                throw new Error("Oops...data loading failed.");
-            }
-        }catch(e){
-            dispatch({ type: StudentActionTypeEnum.ERROR, payload: e });
-        }
-    }, [fetchData]);
-
-     const updateStudent = useCallback(async ( updatedStudent ) => {
-        dispatch({ type: StudentActionTypeEnum.LOADING });
-
-        try{
-            const response = await fetch(`http://localhost:1337/api/students/${updatedStudent.documentId}`, 
-                {
-                    method: StudentActionTypeEnum.UPDATE,
-                    body: JSON.stringify({ data: { 
-                        name: updatedStudent.name,
-                        gender: updatedStudent.gender,
-                        age: updatedStudent.age,
-                        emailAddress: updatedStudent.emailAddress,
-                        department: updatedStudent.department,
-                        gpa: updatedStudent.gpa,
-                        graduationYear: updatedStudent.graduationYear
-                     }}),
-                    headers: { "Content-type": "application/json" }
-                }
-            );
-            if(response.ok){
-                fetchData();
-                dispatch({ type: StudentActionTypeEnum.HIDEEDITFORM });
-            } else {
-                throw new Error("Oops...data loading failed.");
-            }
-        }catch(e){
-            dispatch({ type: StudentActionTypeEnum.ERROR, payload: e });
-        }
-    }, [fetchData]);
-
-    const deleteStudentByID = useCallback(async (documentId) => {
-        try{
-            dispatch({ type: StudentActionTypeEnum.DELETECANCELLED });
-            dispatch({ type: StudentActionTypeEnum.LOADING });
-            const response = await fetch(`http://localhost:1337/api/students/${documentId}`, 
-                {
-                    method: StudentActionTypeEnum.UPDATE,
-                    body: JSON.stringify({ data: { deleted: true } }),
-                    headers: { "Content-type": "application/json" }
-                }
-            );
-            if(!response.ok){
-                throw new Error("Oops...delete failed.");
-            }
-
-            dispatch({ type: StudentActionTypeEnum.DELETED, payload: documentId });
-
-        }catch(e){
-            dispatch({ type: StudentActionTypeEnum.ERROR, payload: e });
-        }
-    }, []);
-
-    const addBackStudentByID = useCallback(async (documentId) => {
-        try{
-            dispatch({ type: StudentActionTypeEnum.ADDBACKCANCELLED });
-            dispatch({ type: StudentActionTypeEnum.LOADING });
-            const response = await fetch(`http://localhost:1337/api/students/${documentId}`, 
-                {
-                    method: StudentActionTypeEnum.UPDATE,
-                    body: JSON.stringify({ data: { deleted: false } }),
-                    headers: { "Content-type": "application/json" }
-                }
-            );
-            if(!response.ok){
-                throw new Error("Oops...add back failed.");
-            }
-
-            dispatch({ type: StudentActionTypeEnum.ADDEDBACK, payload: documentId });
-
-        }catch(e){
-            dispatch({ type: StudentActionTypeEnum.ERROR, payload: e });
-        }
-    }, []);
-
-    const deleteHandler = (documentId) => {
-        dispatch({ type: StudentActionTypeEnum.DELETECONFIRMPROMPT, payload: documentId });
-    }
-
-    const addBackHandler = (documentId) => {
-        dispatch({ type: StudentActionTypeEnum.ADDBACKCONFIRMPROMPT, payload: documentId });
-    }
-
-    const updateHanlder = (student) => {
-
-        if(showAddForm){
-            dispatch({type: StudentActionTypeEnum.HIDEADDFORM });
-        }
-        dispatch({ type: StudentActionTypeEnum.SHOWEDITFORM, payload: student});
-    }
+    const { loading, error, studentData } = dataState;
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
+    const onAddClick = useCallback(async() => {
+        uiDispatch( { type: StudentUIActionEnum.SHOW_ADD_FORM } );
+    }, []);
+
+    const onAddCancelClick = useCallback(async() => {
+        uiDispatch( { type: StudentUIActionEnum.HIDE_ADD_FORM } );
+    }, []);
+
+    const onEditCancelClick = useCallback(async() => {
+        uiDispatch( { type: StudentUIActionEnum.HIDE_EDIT_FORM } );
+    }, []);
+    
+    const deleteHandler = (documentId) => {
+        uiDispatch({ type: StudentUIActionEnum.DELETE_CONFIRM, payload: documentId });
+    }
+
+    const addBackHandler = (documentId) => {
+        uiDispatch({ type: StudentUIActionEnum.ADD_BACK_CONFIRM, payload: documentId });
+    }
+
+    const updateHanlder = (student) => {
+        if(showAddForm){
+            uiDispatch({type: StudentUIActionEnum.HIDE_ADD_FORM });
+        }
+        uiDispatch({ type: StudentUIActionEnum.SHOW_EDIT_FORM, payload: student});
+    }
+
     return <>
         { deleteConfirmPrompt &&  <ConfirmModal 
                             confirmText={"Are you sure to delete this student?"}
                                 onConfirmed={() => deleteStudentByID(documentIdToDelete)}
-                                onCancelled={() => {dispatch({ type: StudentActionTypeEnum.DELETECANCELLED })}} 
+                                onCancelled={() => {uiDispatch({ type: StudentUIActionEnum.DELETE_CANCEL })}} 
                             />
         }
 
         { addBackConfirmPrompt &&  <ConfirmModal 
                             confirmText={"Are you sure to add back this student?"}
                                 onConfirmed={() => addBackStudentByID(documentIdToAddBack)}
-                                onCancelled={() => {dispatch({ type: StudentActionTypeEnum.ADDBACKCANCELLED })}} 
+                                onCancelled={() => {uiDispatch({ type: StudentUIActionEnum.ADD_BACK_CANCEL })}} 
                             />
         }
         { loading && <LoadingOverlay /> }
