@@ -10,20 +10,26 @@ import StyleModule from "../../UI/Style.module.css";
 import useStudentUI from "../../Hooks/UseStudentUi";
 import useStudentData from "../../Hooks/UseStudentDataHooks/UseStudentData";
 import StudentUIActionEnum from "../../Reducers/StudentUiReducer";
-import useFetch from "../../Hooks/UseStudentDataHooks/UseFetch";
-import useAddNewStudent from "../../Hooks/UseStudentDataHooks/UseAddNewStudent";
-import useDeleteStudentByID from "../../Hooks/UseStudentDataHooks/UseDeleteStudentByID";
-import useAddBackStudentByID from "../../Hooks/UseStudentDataHooks/UseAddBackStudentByID";
-import useUpdateStudent from "../../Hooks/UseStudentDataHooks/UseUpdateStudent";
+import useStudentDataHook from "../../Hooks/UseStudentDataHooks/UseStudentDataHook";
+import StudentDataHookEnum from "../../Hooks/UseStudentDataHooks/StudentDataHookEnum";
 
 const StudentsTable = () => {
     const { uiState, uiDispatch } = useStudentUI();
     const { dataState, dataDispatch }  = useStudentData();
-    const { fetchData } = useFetch(dataDispatch);
-    const { addNewStudent } = useAddNewStudent(dataDispatch, uiDispatch, fetchData);
-    const { deleteStudentByID } = useDeleteStudentByID(dataDispatch, uiDispatch);
-    const { addBackStudentByID } = useAddBackStudentByID(uiDispatch, dataDispatch);
-    const { updateStudent } = useUpdateStudent(uiDispatch, dataDispatch, fetchData);
+    const { apiCall } = useStudentDataHook(dataDispatch, uiDispatch);
+
+    // why useCallBack
+    // as apiCall will update uiState and dataState
+    // then without useCallBack, fetchData will be re-defined
+    // then in useEffect, fetchData will be calling forever
+    const fetchData = 
+        useCallback(() => apiCall({ type: StudentDataHookEnum.LOAD }), 
+    [apiCall]);
+
+    const addNewStudent = useCallback((newStudent) => apiCall({ type: StudentDataHookEnum.ADD_NEW, body: newStudent}), [apiCall]);
+    const deleteStudentByID = useCallback((documentIdToDelete) => apiCall({ type: StudentDataHookEnum.DELETE, body: documentIdToDelete }), [apiCall]);
+    const addBackStudentByID = useCallback((documentIdToAddBack) => apiCall({ type: StudentDataHookEnum.ADD_BACK, body: documentIdToAddBack }), [apiCall]);
+    const updateStudent = useCallback((updatedStudent) => apiCall({ type: StudentDataHookEnum.UPDATE, body: updatedStudent}), [apiCall]);
 
     const { showAddForm, showEditForm, deleteConfirmPrompt, addBackConfirmPrompt,
             documentIdToDelete, documentIdToAddBack, studentToEdit } = uiState;

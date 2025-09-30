@@ -63,6 +63,7 @@ const reducer = (state, action) => {
         
         case StudentFormEnum.REVERTCANCELLED:
             return {
+                ...state,
                 showRevertPrompt: false,
             }
 
