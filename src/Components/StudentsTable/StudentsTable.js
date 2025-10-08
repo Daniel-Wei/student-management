@@ -7,83 +7,73 @@ import { faAdd, faArrowsRotate, faRemove } from "@fortawesome/free-solid-svg-ico
 import ConfirmModal from "../../UI/ConfirmModal/ConfirmModal";
 import StudentForm from "../StudentForm/StudentForm";
 import StyleModule from "../../UI/Style.module.css";
-import useStudentUI from "../../Hooks/UseStudentUi";
-import useStudentData from "../../Hooks/UseStudentDataHooks/UseStudentData";
-import StudentUIActionEnum from "../../Reducers/StudentUiReducer";
-import useStudentDataHook from "../../Hooks/UseStudentDataHooks/UseStudentDataHook";
-import StudentDataHookEnum from "../../Hooks/UseStudentDataHooks/StudentDataHookEnum";
+import { useDispatch, useSelector } from "react-redux";
+import { setStudentDataLoaded } from "../../store/slices/studentDataSlice";
+import { setStudentUIIsLoading, setStudentUIShowAddForm, setStudentUIHideAddForm, setStudentUIShowEditForm, setStudentUIHideEditForm,
+    setStudentUIShowDeleteConfirm, setStudentUIHideDeleteConfirm, setStudentUIShowAddBackConfirm, setStudentUIHideAddBackConfirm
+ } from "../../store/slices/studentUISlice";
+import { useGetAllStudentsQuery } from "../../store/studentApi";
 
 const StudentsTable = () => {
-    const { uiState, uiDispatch } = useStudentUI();
-    const { dataState, dataDispatch }  = useStudentData();
-    const { apiCall } = useStudentDataHook(dataDispatch, uiDispatch);
+    // const {studentData: stuData, studentUI: stuUI} = useSelector(state => state);
+    const dispatch = useDispatch();
 
-    // why useCallBack
-    // as apiCall will update uiState and dataState
-    // then without useCallBack, fetchData will be re-defined
-    // then in useEffect, fetchData will be calling forever
-    const fetchData = 
-        useCallback(() => apiCall({ type: StudentDataHookEnum.LOAD }), 
-    [apiCall]);
+    const { showAddForm, showEditForm, showDeleteConfirmPrompt, showAddBackConfirmPrompt,
+            documentIdToDelete, documentIdToAddBack, studentToEdit } = useSelector(state => state.studentUI);
 
-    const addNewStudent = useCallback((newStudent) => apiCall({ type: StudentDataHookEnum.ADD_NEW, body: newStudent}), [apiCall]);
-    const deleteStudentByID = useCallback((documentIdToDelete) => apiCall({ type: StudentDataHookEnum.DELETE, body: documentIdToDelete }), [apiCall]);
-    const addBackStudentByID = useCallback((documentIdToAddBack) => apiCall({ type: StudentDataHookEnum.ADD_BACK, body: documentIdToAddBack }), [apiCall]);
-    const updateStudent = useCallback((updatedStudent) => apiCall({ type: StudentDataHookEnum.UPDATE, body: updatedStudent}), [apiCall]);
-
-    const { showAddForm, showEditForm, deleteConfirmPrompt, addBackConfirmPrompt,
-            documentIdToDelete, documentIdToAddBack, studentToEdit } = uiState;
-
-    const { loading, error, studentData } = dataState;
+    const { studentData } = useSelector(state => state.studentData);
+    const { data: result, isLoading, isSuccess, isError, error } = useGetAllStudentsQuery();
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if(isSuccess){
+            dispatch(setStudentDataLoaded(result.data));
+        }
+    }, [dispatch, setStudentDataLoaded, result]);
 
     const onAddClick = useCallback(async() => {
-        uiDispatch( { type: StudentUIActionEnum.SHOW_ADD_FORM } );
+        dispatch(setStudentUIShowAddForm());
     }, []);
 
     const onAddCancelClick = useCallback(async() => {
-        uiDispatch( { type: StudentUIActionEnum.HIDE_ADD_FORM } );
+        dispatch(setStudentUIHideAddForm());
     }, []);
 
     const onEditCancelClick = useCallback(async() => {
-        uiDispatch( { type: StudentUIActionEnum.HIDE_EDIT_FORM } );
+        dispatch(setStudentUIShowEditForm());
     }, []);
     
     const deleteHandler = (documentId) => {
-        uiDispatch({ type: StudentUIActionEnum.DELETE_CONFIRM, payload: documentId });
+        dispatch(setStudentUIShowDeleteConfirm(documentId));
     }
 
     const addBackHandler = (documentId) => {
-        uiDispatch({ type: StudentUIActionEnum.ADD_BACK_CONFIRM, payload: documentId });
+        dispatch(setStudentUIShowAddBackConfirm(documentId));
     }
 
     const updateHanlder = (student) => {
         if(showAddForm){
-            uiDispatch({type: StudentUIActionEnum.HIDE_ADD_FORM });
+            dispatch(setStudentUIHideAddForm());
         }
-        uiDispatch({ type: StudentUIActionEnum.SHOW_EDIT_FORM, payload: student});
+        dispatch(setStudentUIShowEditForm(student));
     }
 
     return <>
-        { deleteConfirmPrompt &&  <ConfirmModal 
+        { showDeleteConfirmPrompt &&  <ConfirmModal 
                             confirmText={"Are you sure to delete this student?"}
-                                onConfirmed={() => deleteStudentByID(documentIdToDelete)}
-                                onCancelled={() => {uiDispatch({ type: StudentUIActionEnum.DELETE_CANCEL })}} 
+                                // onConfirmed={() => {dispatch(setStudentData)}}
+                                onCancelled={() => {dispatch(setStudentUIHideDeleteConfirm())}} 
                             />
         }
 
-        { addBackConfirmPrompt &&  <ConfirmModal 
+        { showAddBackConfirmPrompt &&  <ConfirmModal 
                             confirmText={"Are you sure to add back this student?"}
-                                onConfirmed={() => addBackStudentByID(documentIdToAddBack)}
-                                onCancelled={() => {uiDispatch({ type: StudentUIActionEnum.ADD_BACK_CANCEL })}} 
+                                // onConfirmed={() => addBackStudentByID(documentIdToAddBack)}
+                                onCancelled={() => {dispatch(setStudentUIHideAddBackConfirm())}} 
                             />
         }
-        { loading && <LoadingOverlay /> }
+        { isLoading && <LoadingOverlay /> }
         { error && <p>{error.message}</p> }
-        {!loading && !error && 
+        {!isLoading && !error && 
             <div className={StudentsTableModule.container}>
                 <div>
                     {showAddForm !== true && showEditForm !== true &&
@@ -108,17 +98,18 @@ const StudentsTable = () => {
                     }
 
                     <button className={`${StyleModule.normalHover} ${StyleModule.button}`} 
-                            onClick={fetchData}>
+                            // onClick={fetchData}
+                            >
                         <FontAwesomeIcon icon={faArrowsRotate}/> Refresh
                     </button>
                 </div>
 
                 {showAddForm && 
-                    <StudentForm onAdd={addNewStudent}/>
+                    <StudentForm/>
                 }
 
                 {showEditForm && 
-                    <StudentForm studentToEdit={studentToEdit} onEdit={updateStudent}/>
+                    <StudentForm studentToEdit={studentToEdit}/>
                 }
 
                 <table className={StudentsTableModule.table}>
